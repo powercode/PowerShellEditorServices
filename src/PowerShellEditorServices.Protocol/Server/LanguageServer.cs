@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Templates;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
