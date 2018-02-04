@@ -57,6 +57,7 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <PackageReference Include="Ben.Demystifier" Version="0.0.43" />
   </ItemGroup>
 
   <ItemGroup>

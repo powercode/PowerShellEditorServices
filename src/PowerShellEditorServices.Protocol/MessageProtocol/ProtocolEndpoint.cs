@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -392,7 +393,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     LogLevel.Error,
                     string.Format(
                         "ProtocolEndpoint message loop terminated due to unhandled exception:\r\n\r\n{0}",
+#if CoreCLR
                         listenTask.Exception.ToString()));
+#else
+                        listenTask.Exception.Demystify().ToString()));
+#endif
 
                 this.OnUnhandledException(listenTask.Exception);
             }
@@ -402,6 +407,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        #endregion
+#endregion
     }
 }

@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -117,7 +118,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             this.Write(
                 LogLevel.Error,
+#if CoreCLR
                 $"{errorMessage}\r\n\r\n{errorException.ToString()}",
+#else
+                $"{errorMessage}\r\n\r\n{errorException.Demystify().ToString()}",
+#endif
                 callerName,
                 callerSourceFile,
                 callerLineNumber);
