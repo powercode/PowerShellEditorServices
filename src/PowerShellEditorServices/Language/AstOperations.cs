@@ -122,20 +122,32 @@ namespace Microsoft.PowerShell.EditorServices
                     Stopwatch stopwatch = new Stopwatch();
                     stopwatch.Start();
 
-                    commandCompletion =
-                        CommandCompletion.CompleteInput(
-                            scriptAst,
-                            currentTokens,
-                            cursorPosition,
-                            null,
-                            powerShell);
+					var completionTask =
+						Task.Run(() => CommandCompletion.CompleteInput(
+							scriptAst,
+							currentTokens,
+							cursorPosition,
+							null,
+							powerShell));
 
+					try {
+						completionTask.Wait(1);
+						commandCompletion = completionTask.Result;
+					} 
+					catch (System.AggregateException e)
+                    {
+						powerShell.Stop();
+						var logString = "";
+						foreach (var v in e.InnerExceptions)
+                            logString += e.Message + " " + v.Message + "\n";
+							logger.Write(LogLevel.Verbose, $"Completions did not finish in time: \n{logString}");
+                    }
+               
                     stopwatch.Stop();
-
                     logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
                 }
             }
-
+         
             return commandCompletion;
         }
 
