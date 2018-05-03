@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class CompletionRequest
     {
         public static readonly
-            RequestType<TextDocumentPositionParams, CompletionItem[], object, CompletionRegistrationOptions> Type =
-            RequestType<TextDocumentPositionParams, CompletionItem[], object, CompletionRegistrationOptions>.Create("textDocument/completion");
+		    RequestType<TextDocumentPositionParams, CompletionList, object, CompletionRegistrationOptions> Type =
+			RequestType<TextDocumentPositionParams, CompletionList, object, CompletionRegistrationOptions>.Create("textDocument/completion");
     }
 
     public class CompletionResolveRequest
@@ -65,6 +65,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
         public string NewText { get; set; }
     }
+
+	public class CompletionList
+	{
+		public bool IsIncomplete { get; set; }
+
+		public CompletionItem[] Items { get; set; }
+	}
 
     [DebuggerDisplay("Kind = {Kind.ToString()}, Label = {Label}, Detail = {Detail}")]
     public class CompletionItem

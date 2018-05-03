@@ -697,7 +697,7 @@ function __Expand-Alias {
 
         protected async Task HandleCompletionRequest(
             TextDocumentPositionParams textDocumentPositionParams,
-            RequestContext<CompletionItem[]> requestContext)
+			RequestContext<CompletionList> requestContext)
         {
             int cursorLine = textDocumentPositionParams.Position.Line + 1;
             int cursorColumn = textDocumentPositionParams.Position.Character + 1;
@@ -706,18 +706,34 @@ function __Expand-Alias {
                 editorSession.Workspace.GetFile(
                     textDocumentPositionParams.TextDocument.Uri);
 
-            CompletionResults completionResults =
-                await editorSession.LanguageService.GetCompletionsInFile(
-                    scriptFile,
-                    cursorLine,
-                    cursorColumn);
 
-            CompletionItem[] completionItems = null;
+			CompletionList completionList = new CompletionList
+			{
+				Items = null,
+				IsIncomplete = false
+			};
 
-            if (completionResults != null)
+			CompletionResults completionResults = null;
+			try {
+    			completionResults =
+                    await editorSession.LanguageService.GetCompletionsInFile(
+                        scriptFile,
+                        cursorLine,
+                        cursorColumn);            
+		    } 
+            catch (System.AggregateException e)
+            {
+				completionList.IsIncomplete = true;
+                var logString = "";
+                foreach (var v in e.InnerExceptions)
+                    logString += e.Message + " " + v.Message + "\n";
+					Logger.Write(LogLevel.Verbose, $"Completions did not finish in time: \n{logString}");
+            }
+
+			if (completionResults != null)
             {
                 int sortIndex = 1;
-                completionItems =
+				completionList.Items =
                     completionResults
                         .Completions
                         .Select(
@@ -729,10 +745,10 @@ function __Expand-Alias {
             }
             else
             {
-                completionItems = new CompletionItem[0];
+				completionList.Items = new CompletionItem[0];
             }
 
-            await requestContext.SendResult(completionItems);
+			await requestContext.SendResult(completionList);
         }
 
         protected async Task HandleCompletionResolveRequest(

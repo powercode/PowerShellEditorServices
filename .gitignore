@@ -69,3 +69,6 @@ module/PowerShellEditorServices/Third\ Party\ Notices.txt
 
 # Visual Studio for Mac generated file
 *.userprefs
+
+# JetBrains Rider/IntelliJ metadata
+.idea

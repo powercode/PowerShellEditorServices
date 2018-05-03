@@ -141,7 +141,9 @@ namespace Microsoft.PowerShell.EditorServices
 						foreach (var v in e.InnerExceptions)
                             logString += e.Message + " " + v.Message + "\n";
 							logger.Write(LogLevel.Verbose, $"Completions did not finish in time: \n{logString}");
-                    }
+
+						throw;
+					}
                
                     stopwatch.Stop();
                     logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
