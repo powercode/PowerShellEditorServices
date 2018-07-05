@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             await SendOutput(debouncer, "for great justice");
 
             // Assert that there's only one event with the expected string
-            Assert.Equal(1, messageSender.OutputEvents.Count);
+            Assert.Single(messageSender.OutputEvents);
             Assert.Equal(
                 "This is a test\r\nAnother line",
                 messageSender.OutputEvents[0].Output);

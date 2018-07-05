@@ -17,16 +17,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 {
     public class DebugServiceTests : IDisposable
     {
-        private Workspace workspace;
-        private DebugService debugService;
-        private ScriptFile debugScriptFile;
-        private ScriptFile variableScriptFile;
-        private PowerShellContext powerShellContext;
+        private readonly Workspace workspace;
+        private readonly DebugService debugService;
+        private readonly ScriptFile debugScriptFile;
+        private readonly ScriptFile variableScriptFile;
+        private readonly PowerShellContext powerShellContext;
         private SynchronizationContext runnerContext;
 
-        private AsyncQueue<DebuggerStoppedEventArgs> debuggerStoppedQueue =
+        private readonly AsyncQueue<DebuggerStoppedEventArgs> debuggerStoppedQueue =
             new AsyncQueue<DebuggerStoppedEventArgs>();
-        private AsyncQueue<SessionStateChangedEventArgs> sessionStateQueue =
+        private readonly AsyncQueue<SessionStateChangedEventArgs> sessionStateQueue =
             new AsyncQueue<SessionStateChangedEventArgs>();
 
         public DebugServiceTests()
@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Theory]
-        [MemberData("DebuggerAcceptsScriptArgsTestData")]
+        [MemberData(nameof(DebuggerAcceptsScriptArgsTestData))]
         public async Task DebuggerAcceptsScriptArgs(string[] args)
         {
             // The path is intentionally odd (some escaped chars but not all) because we are testing
@@ -174,14 +174,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 await this.debugService.SetCommandBreakpoints(
                     new[] { CommandBreakpointDetails.Create("Get-Host") });
 
-            Assert.Equal(1, breakpoints.Length);
+            Assert.Single(breakpoints);
             Assert.Equal("Get-Host", breakpoints[0].Name);
 
             breakpoints =
                 await this.debugService.SetCommandBreakpoints(
                     new CommandBreakpointDetails[] {});
 
-            Assert.Equal(0, breakpoints.Length);
+            Assert.Empty(breakpoints);
         }
 
         [Fact]
@@ -254,7 +254,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             confirmedBreakpoints = await this.GetConfirmedBreakpoints(this.debugScriptFile);
 
-            Assert.Equal(1, confirmedBreakpoints.Count());
+            Assert.Single(confirmedBreakpoints);
             Assert.Equal(2, breakpoints[0].LineNumber);
 
             await this.debugService.SetLineBreakpoints(
@@ -903,17 +903,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.powerShellContext.AbortExecution();
         }
 
-        public async Task AssertDebuggerPaused()
+        private async Task AssertDebuggerPaused()
         {
             SynchronizationContext syncContext = SynchronizationContext.Current;
 
             DebuggerStoppedEventArgs eventArgs =
                 await this.debuggerStoppedQueue.DequeueAsync();
 
-            Assert.Equal(0, eventArgs.OriginalEvent.Breakpoints.Count);
+            Assert.Empty(eventArgs.OriginalEvent.Breakpoints);
         }
 
-        public async Task AssertDebuggerStopped(
+        private async Task AssertDebuggerStopped(
             string scriptPath,
             int lineNumber = -1)
         {

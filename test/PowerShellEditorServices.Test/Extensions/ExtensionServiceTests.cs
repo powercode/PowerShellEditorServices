@@ -136,8 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             await this.AssertExtensionEvent(EventType.Remove, "test.scriptblock");
 
             // Ensure that the command has been unregistered
-            await Assert.ThrowsAsync(
-                typeof(KeyNotFoundException),
+            await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => extensionService.InvokeCommand("test.scriptblock", this.commandContext));
         }
 

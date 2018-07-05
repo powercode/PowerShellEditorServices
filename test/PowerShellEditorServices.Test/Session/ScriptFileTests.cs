@@ -155,8 +155,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void ThrowsExceptionWithEditOutsideOfRange()
         {
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     this.AssertFileChange(
@@ -227,7 +226,7 @@ namespace PSLanguageService.Test
                 this.scriptFile.GetLinesInRange(
                     new BufferRange(5, 1, 5, 10));
 
-            Assert.Equal(1, lines.Length);
+            Assert.Single(lines);
             Assert.Equal("Line Five", lines[0]);
         }
 
@@ -248,7 +247,7 @@ namespace PSLanguageService.Test
                 this.scriptFile.GetLinesInRange(
                     new BufferRange(4, 3, 4, 8));
 
-            Assert.Equal(1, lines.Length);
+            Assert.Single(lines);
             Assert.Equal("ne Fo", lines[0]);
         }
 
@@ -259,7 +258,7 @@ namespace PSLanguageService.Test
                 this.scriptFile.GetLinesInRange(
                     new BufferRange(4, 3, 4, 3));
 
-            Assert.Equal(1, lines.Length);
+            Assert.Single(lines);
             Assert.Equal("", lines[0]);
         }
 
@@ -373,8 +372,7 @@ First line
         public void ThrowsWhenPositionOutOfRange()
         {
             // Less than line range
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     scriptFile.CalculatePosition(
@@ -383,8 +381,7 @@ First line
                 });
 
             // Greater than line range
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     scriptFile.CalculatePosition(
@@ -393,8 +390,7 @@ First line
                 });
 
             // Less than column range
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     scriptFile.CalculatePosition(
@@ -403,8 +399,7 @@ First line
                 });
 
             // Greater than column range
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     scriptFile.CalculatePosition(
