@@ -13,16 +13,18 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// The visitor used to find the definition of a symbol
     /// </summary>
-    internal class FindDeclarationVisitor : AstVisitor
+    public class FindDeclarationVisitor : AstVisitor
     {
-        private SymbolReference symbolRef;
-        private string variableName;
+        private readonly SymbolReference symbolRef;
+        private readonly List<SymbolReference> result;
+        private readonly string variableName;
 
         public SymbolReference FoundDeclaration{ get; private set; }
 
-        public FindDeclarationVisitor(SymbolReference symbolRef)
+        public FindDeclarationVisitor(SymbolReference symbolRef, List<SymbolReference> result)
         {
             this.symbolRef = symbolRef;
+            this.result = result;
             if (this.symbolRef.SymbolType == SymbolType.Variable)
             {
                 // converts `$varName` to `varName` or of the form ${varName} to varName
@@ -58,10 +60,10 @@ namespace Microsoft.PowerShell.EditorServices
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
                 nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase))
             {
-                this.FoundDeclaration =
+                this.result.Add(
                     new SymbolReference(
                         SymbolType.Function,
-                        nameExtent);
+                        nameExtent));
 
                 return AstVisitAction.StopVisit;
             }

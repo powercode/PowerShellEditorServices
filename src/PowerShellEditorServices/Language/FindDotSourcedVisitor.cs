@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// The vistor used to find the dont sourced files in an AST
     /// </summary>
-    internal class FindDotSourcedVisitor : AstVisitor
+    public class FindDotSourcedVisitor : AstVisitor
     {
        /// <summary>
        /// A hash set of the dot sourced files (because we don't want duplicates)

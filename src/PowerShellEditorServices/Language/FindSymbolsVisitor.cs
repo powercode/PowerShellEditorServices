@@ -14,20 +14,20 @@ namespace Microsoft.PowerShell.EditorServices
     /// <remarks>
     /// Requires PowerShell v3 or higher
     /// </remarks>
-    internal class FindSymbolsVisitor : AstVisitor
+    public class FindSymbolsVisitor : AstVisitor
     {
         public List<SymbolReference> SymbolReferences { get; private set; }
 
-        public FindSymbolsVisitor()
+        public FindSymbolsVisitor(List<SymbolReference> result)
         {
-            this.SymbolReferences = new List<SymbolReference>();
+            this.SymbolReferences = result;
         }
 
         /// <summary>
-        /// Adds each function defintion as a 
+        /// Adds each function defintion as a
         /// </summary>
         /// <param name="functionDefinitionAst">A functionDefinitionAst object in the script's AST</param>
-        /// <returns>A decision to stop searching if the right symbol was found, 
+        /// <returns>A decision to stop searching if the right symbol was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
@@ -39,8 +39,8 @@ namespace Microsoft.PowerShell.EditorServices
                 EndColumnNumber = functionDefinitionAst.Extent.EndColumnNumber
             };
 
-            SymbolType symbolType = 
-                functionDefinitionAst.IsWorkflow ? 
+            SymbolType symbolType =
+                functionDefinitionAst.IsWorkflow ?
                     SymbolType.Workflow : SymbolType.Function;
 
             this.SymbolReferences.Add(
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices
         ///  Checks to see if this variable expression is the symbol we are looking for.
         /// </summary>
         /// <param name="variableExpressionAst">A VariableExpressionAst object in the script's AST</param>
-        /// <returns>A descion to stop searching if the right symbol was found, 
+        /// <returns>A descion to stop searching if the right symbol was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             return AstVisitAction.Continue;
         }
-        
+
         private bool IsAssignedAtScriptScope(VariableExpressionAst variableExpressionAst)
         {
             Ast parent = variableExpressionAst.Parent;

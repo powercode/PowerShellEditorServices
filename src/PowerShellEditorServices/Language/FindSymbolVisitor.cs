@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Collections.Generic;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -10,29 +11,31 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// The visitor used to find the the symbol at a specfic location in the AST
     /// </summary>
-    internal class FindSymbolVisitor : AstVisitor
+    public class FindSymbolVisitor : AstVisitor
     {
-        private int lineNumber;
-        private int columnNumber;
-        private bool includeFunctionDefinitions;
+        private readonly int lineNumber;
+        private readonly int columnNumber;
+        private readonly bool includeFunctionDefinitions;
 
-        public SymbolReference FoundSymbolReference { get; private set; }
+        private readonly List<SymbolReference> result;
+        public SymbolReference FoundSymbolReference => result[0];
 
         public FindSymbolVisitor(
             int lineNumber,
             int columnNumber,
-            bool includeFunctionDefinitions)
+            bool includeFunctionDefinitions, List<SymbolReference> result)
         {
             this.lineNumber = lineNumber;
             this.columnNumber = columnNumber;
             this.includeFunctionDefinitions = includeFunctionDefinitions;
+            this.result = result;
         }
 
         /// <summary>
         /// Checks to see if this command ast is the symbol we are looking for.
         /// </summary>
         /// <param name="commandAst">A CommandAst object in the script's AST</param>
-        /// <returns>A descion to stop searching if the right symbol was found, 
+        /// <returns>A descion to stop searching if the right symbol was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
@@ -40,11 +43,11 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (this.IsPositionInExtent(commandNameAst.Extent))
             {
-                this.FoundSymbolReference =
+                var res =
                     new SymbolReference(
                         SymbolType.Function,
                         commandNameAst.Extent);
-
+                result.Add(res);
                 return AstVisitAction.StopVisit;
             }
 
@@ -55,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Checks to see if this function definition is the symbol we are looking for.
         /// </summary>
         /// <param name="functionDefinitionAst">A functionDefinitionAst object in the script's AST</param>
-        /// <returns>A descion to stop searching if the right symbol was found, 
+        /// <returns>A descion to stop searching if the right symbol was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
@@ -79,11 +82,11 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (this.IsPositionInExtent(nameExtent))
             {
-                this.FoundSymbolReference =
+                var res =
                     new SymbolReference(
                         SymbolType.Function,
                         nameExtent);
-
+                result.Add(res);
                 return AstVisitAction.StopVisit;
             }
 
@@ -94,16 +97,17 @@ namespace Microsoft.PowerShell.EditorServices
         /// Checks to see if this command parameter is the symbol we are looking for.
         /// </summary>
         /// <param name="commandParameterAst">A CommandParameterAst object in the script's AST</param>
-        /// <returns>A descion to stop searching if the right symbol was found, 
+        /// <returns>A descion to stop searching if the right symbol was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
         {
             if (this.IsPositionInExtent(commandParameterAst.Extent))
             {
-                this.FoundSymbolReference =
+                var res =
                     new SymbolReference(
                         SymbolType.Parameter,
                         commandParameterAst.Extent);
+                result.Add(res);
                 return AstVisitAction.StopVisit;
             }
             return AstVisitAction.Continue;
@@ -113,17 +117,17 @@ namespace Microsoft.PowerShell.EditorServices
         ///  Checks to see if this variable expression is the symbol we are looking for.
         /// </summary>
         /// <param name="variableExpressionAst">A VariableExpressionAst object in the script's AST</param>
-        /// <returns>A descion to stop searching if the right symbol was found, 
+        /// <returns>A descion to stop searching if the right symbol was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
             if (this.IsPositionInExtent(variableExpressionAst.Extent))
             {
-                this.FoundSymbolReference =
+                var res =
                     new SymbolReference(
                         SymbolType.Variable,
                         variableExpressionAst.Extent);
-
+                result.Add(res);
                 return AstVisitAction.StopVisit;
             }
 

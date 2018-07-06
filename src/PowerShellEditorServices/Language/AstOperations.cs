@@ -23,6 +23,9 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     internal static class AstOperations
     {
+
+        internal static IAstVisitorFactory AstVisitorFactory = new LegacyAstVisitorFactory();
+
         /// <summary>
         /// Gets completions for the symbol found in the Ast at
         /// the given file offset.
@@ -47,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// A CommandCompletion instance that contains completions for the
         /// symbol at the given offset.
         /// </returns>
-        static public async Task<CommandCompletion> GetCompletions(
+        public static async Task<CommandCompletion> GetCompletions(
             Ast scriptAst,
             Token[] currentTokens,
             int fileOffset,
@@ -76,11 +79,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             logger.Write(
                 LogLevel.Verbose,
-                string.Format(
-                    "Getting completions at offset {0} (line: {1}, column: {2})",
-                    fileOffset,
-                    cursorPosition.LineNumber,
-                    cursorPosition.ColumnNumber));
+                $"Getting completions at offset {fileOffset} (line: {cursorPosition.LineNumber}, column: {cursorPosition.ColumnNumber})");
 
             CommandCompletion commandCompletion = null;
             if (powerShellContext.IsDebuggerStopped)
@@ -98,8 +97,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                 if (outputObject != null)
                 {
-                    ErrorRecord errorRecord = outputObject.BaseObject as ErrorRecord;
-                    if (errorRecord != null)
+                    if (outputObject.BaseObject is ErrorRecord errorRecord)
                     {
                         logger.WriteException(
                             "Encountered an error while invoking TabExpansion2 in the debugger",
@@ -147,21 +145,22 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
         /// <param name="includeFunctionDefinitions">Includes full function definition ranges in the search.</param>
         /// <returns>SymbolReference of found symbol</returns>
-        static public SymbolReference FindSymbolAtPosition(
+        public static SymbolReference FindSymbolAtPosition(
             Ast scriptAst,
             int lineNumber,
             int columnNumber,
             bool includeFunctionDefinitions = false)
         {
-            FindSymbolVisitor symbolVisitor =
-                new FindSymbolVisitor(
+            var result = new List<SymbolReference>();
+            AstVisitor symbolVisitor =
+                AstVisitorFactory.FindSymbolVisitor(
                     lineNumber,
                     columnNumber,
-                    includeFunctionDefinitions);
+                    includeFunctionDefinitions, result);
 
             scriptAst.Visit(symbolVisitor);
 
-            return symbolVisitor.FoundSymbolReference;
+            return result.FirstOrDefault();
         }
 
         /// <summary>
@@ -171,12 +170,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
         /// <param name="columnNumber">The column number of the cursor for the given script</param>
         /// <returns>SymbolReference of found command</returns>
-        static public SymbolReference FindCommandAtPosition(Ast scriptAst, int lineNumber, int columnNumber)
+        public static SymbolReference FindCommandAtPosition(Ast scriptAst, int lineNumber, int columnNumber)
         {
-            FindCommandVisitor commandVisitor = new FindCommandVisitor(lineNumber, columnNumber);
+            var result = new List<SymbolReference>();
+            AstVisitor commandVisitor = AstVisitorFactory.FindCommandVisitor(lineNumber, columnNumber, result);
             scriptAst.Visit(commandVisitor);
 
-            return commandVisitor.FoundCommandReference;
+            return result.FirstOrDefault();
         }
 
         /// <summary>
@@ -184,24 +184,26 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="symbolReference">The symbol that we are looking for referneces of</param>
-        /// <param name="CmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
-        /// <param name="AliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
+        /// <param name="cmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
+        /// <param name="aliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
         /// <returns></returns>
-        static public IEnumerable<SymbolReference> FindReferencesOfSymbol(
+        public static IEnumerable<SymbolReference> FindReferencesOfSymbol(
             Ast scriptAst,
             SymbolReference symbolReference,
-            Dictionary<String, List<String>> CmdletToAliasDictionary,
-            Dictionary<String, String> AliasToCmdletDictionary)
+            Dictionary<String, List<String>> cmdletToAliasDictionary,
+            Dictionary<String, String> aliasToCmdletDictionary)
         {
+            var results = new List<SymbolReference>();
             // find the symbol evaluators for the node types we are handling
-            FindReferencesVisitor referencesVisitor =
-                new FindReferencesVisitor(
+            var referencesVisitor =
+                AstVisitorFactory.FindReferencesVisitor(
                     symbolReference,
-                    CmdletToAliasDictionary,
-                    AliasToCmdletDictionary);
+                    cmdletToAliasDictionary,
+                    aliasToCmdletDictionary,
+                    results);
             scriptAst.Visit(referencesVisitor);
 
-            return referencesVisitor.FoundReferences;
+            return results;
         }
 
         /// <summary>
@@ -213,16 +215,17 @@ namespace Microsoft.PowerShell.EditorServices
         /// This should always be false and used for occurence requests</param>
         /// <returns>A collection of SymbolReference objects that are refrences to the symbolRefrence
         /// not including aliases</returns>
-        static public IEnumerable<SymbolReference> FindReferencesOfSymbol(
+        public static IEnumerable<SymbolReference> FindReferencesOfSymbol(
             ScriptBlockAst scriptAst,
             SymbolReference foundSymbol,
             bool needsAliases)
         {
-            FindReferencesVisitor referencesVisitor =
-                new FindReferencesVisitor(foundSymbol);
+            var result = new List<SymbolReference>();
+            AstVisitor referencesVisitor =
+                AstVisitorFactory.FindReferencesVisitor(foundSymbol, result);
             scriptAst.Visit(referencesVisitor);
 
-            return referencesVisitor.FoundReferences;
+            return result;
         }
 
         /// <summary>
@@ -231,16 +234,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="symbolReference">The symbol that we are looking for the definition of</param>
         /// <returns>A SymbolReference of the definition of the symbolReference</returns>
-        static public SymbolReference FindDefinitionOfSymbol(
+        public static SymbolReference FindDefinitionOfSymbol(
             Ast scriptAst,
             SymbolReference symbolReference)
         {
-            FindDeclarationVisitor declarationVisitor =
-                new FindDeclarationVisitor(
-                    symbolReference);
+            var result = new List<SymbolReference>();
+            var declarationVisitor =
+                AstVisitorFactory.FindDeclarationVisitor(symbolReference, result);
             scriptAst.Visit(declarationVisitor);
 
-            return declarationVisitor.FoundDeclaration;
+            return result.FirstOrDefault();
         }
 
         /// <summary>
@@ -249,10 +252,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="powerShellVersion">The PowerShell version the Ast was generated from</param>
         /// <returns>A collection of SymbolReference objects</returns>
-        static public IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst, Version powerShellVersion)
+        public static IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst, Version powerShellVersion)
         {
-            IEnumerable<SymbolReference> symbolReferences = null;
-
             // TODO: Restore this when we figure out how to support multiple
             //       PS versions in the new PSES-as-a-module world (issue #276)
             //            if (powerShellVersion >= new Version(5,0))
@@ -264,11 +265,11 @@ namespace Microsoft.PowerShell.EditorServices
             //#endif
             //            }
             //            else
-
-            FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
+            var result = new List<SymbolReference>();
+            var findSymbolsVisitor = AstVisitorFactory.FindSymbolsVisitor(result);
             scriptAst.Visit(findSymbolsVisitor);
-            symbolReferences = findSymbolsVisitor.SymbolReferences;
-            return symbolReferences;
+
+            return result;
         }
 
         /// <summary>
@@ -276,7 +277,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="ast">The abstract syntax tree of the given script</param>
         /// <returns>true if the AST represts a *.psd1 file, otherwise false</returns>
-        static public bool IsPowerShellDataFileAst(Ast ast)
+        public static bool IsPowerShellDataFileAst(Ast ast)
         {
             // sometimes we don't have reliable access to the filename
             // so we employ heuristics to check if the contents are
@@ -292,7 +293,7 @@ namespace Microsoft.PowerShell.EditorServices
                         0);
         }
 
-        static private bool IsPowerShellDataFileAstNode(dynamic node, Type[] levelAstMap, int level)
+        private static bool IsPowerShellDataFileAstNode(dynamic node, Type[] levelAstMap, int level)
         {
             var levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap[level]);
             if (!levelAstTypeMatch)
@@ -305,7 +306,7 @@ namespace Microsoft.PowerShell.EditorServices
                 return levelAstTypeMatch;
             }
 
-            var astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
+            var astsFound = (node.Item as Ast)?.FindAll(a => a != null, false);
             if (astsFound != null)
             {
                 foreach (var astFound in astsFound)
@@ -330,7 +331,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <returns></returns>
-        static public string[] FindDotSourcedIncludes(Ast scriptAst)
+        public static string[] FindDotSourcedIncludes(Ast scriptAst)
         {
             FindDotSourcedVisitor dotSourcedVisitor = new FindDotSourcedVisitor();
             scriptAst.Visit(dotSourcedVisitor);

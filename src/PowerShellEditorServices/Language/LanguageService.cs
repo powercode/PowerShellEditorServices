@@ -626,15 +626,15 @@ namespace Microsoft.PowerShell.EditorServices
                     return fdAst.Body.Extent.StartLineNumber < lineNumber &&
                         fdAst.Body.Extent.EndLineNumber > lineNumber;
                 },
-                true);
+                true).ToArray();
 
-            if (foundAsts != null && foundAsts.Any())
+            if (foundAsts.Any())
             {
                 // of all the function definitions found, return the innermost function
                 // definition that contains `lineNumber`
                 funcDefnAst = foundAsts.Cast<FunctionDefinitionAst>().Aggregate((x, y) =>
                 {
-                    if (x.Extent.StartOffset >= y.Extent.StartOffset && x.Extent.EndOffset <= x.Extent.EndOffset)
+                    if (x.Extent.StartOffset >= y.Extent.StartOffset && x.Extent.EndOffset <= y.Extent.EndOffset)
                     {
                         return x;
                     }
