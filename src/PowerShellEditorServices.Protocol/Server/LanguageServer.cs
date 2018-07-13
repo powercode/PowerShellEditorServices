@@ -649,14 +649,12 @@ function __Expand-Alias {
 
             List<Location> definitionLocations = new List<Location>();
 
-            GetDefinitionResult definition = null;
             if (foundSymbol != null)
             {
-                definition =
-                    await editorSession.LanguageService.GetDefinitionOfSymbol(
-                        scriptFile,
-                        foundSymbol,
-                        editorSession.Workspace);
+                var definition = await editorSession.LanguageService.GetDefinitionOfSymbol(
+                    scriptFile,
+                    foundSymbol,
+                    editorSession.Workspace);
 
                 if (definition != null)
                 {
@@ -974,7 +972,14 @@ function __Expand-Alias {
                 case SymbolType.Function:
                 case SymbolType.Workflow:
                     return SymbolKind.Function;
-
+                case SymbolType.Class:
+                    return SymbolKind.Class;
+                case SymbolType.Constructor:
+                    return SymbolKind.Constructor;
+                case SymbolType.Method:
+                    return SymbolKind.Method;
+                case SymbolType.Property:
+                    return SymbolKind.Property;
                 default:
                     return SymbolKind.Variable;
             }
@@ -984,11 +989,31 @@ function __Expand-Alias {
         {
             string name = symbolReference.SymbolName;
 
-            if (symbolReference.SymbolType == SymbolType.Configuration ||
-                symbolReference.SymbolType == SymbolType.Function ||
-                symbolReference.SymbolType == SymbolType.Workflow)
+            switch (symbolReference.SymbolType)
             {
-                name += " { }";
+                case SymbolType.Unknown:
+                    break;
+                case SymbolType.Variable:
+                    break;
+                case SymbolType.Configuration:
+                case SymbolType.Workflow:
+                case SymbolType.Function:
+                    name += " { }";
+                    break;
+                case SymbolType.Parameter:
+                    break;
+                case SymbolType.HashtableKey:
+                    break;
+                case SymbolType.Class:
+                    break;
+                case SymbolType.Method:
+                    name = symbolReference.DisplayString;
+                    break;
+                case SymbolType.Property:
+                    break;
+                case SymbolType.Constructor:
+                    name = symbolReference.DisplayString;
+                    break;
             }
 
             return name;
@@ -1129,8 +1154,7 @@ function __Expand-Alias {
                     ? (lines ?? ScriptFile.GetLines(funcText)).ToArray() 
                     : null;
 
-                if (helpLocation != null &&
-                    !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
+                if (!helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
                 {
                     // we need to trim the leading `{` and newline when helpLocation=="begin"
                     // we also need to trim the leading newline when helpLocation=="end"

@@ -47,7 +47,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
     if ($dotnetExePath) {
         # dotnet --version can return a semver that System.Version can't handle
         # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
-        $version = (& $dotnetExePath --version) -replace '[+-].*$',''
+        $version = (& $dotnetExePath --version) -replace '[+-].*$', ''
         if ([version]$version -ge [version]$requiredSdkVersion) {
             $script:dotnetExe = $dotnetExePath
         }
@@ -87,8 +87,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
 
     # This variable is used internally by 'dotnet' to know where it's installed
     $script:dotnetExe = Resolve-Path $script:dotnetExe
-    if (!$env:DOTNET_INSTALL_DIR)
-    {
+    if (!$env:DOTNET_INSTALL_DIR) {
         $dotnetExeDir = [System.IO.Path]::GetDirectoryName($script:dotnetExe)
         $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
         $env:DOTNET_INSTALL_DIR = $dotnetExeDir
@@ -149,6 +148,8 @@ task Build {
     }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f netstandard1.6 }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.AstVisitors\PowerShellEditorServices.AstVisitors.csproj -f netstandard1.6 }
+    Copy-Item $PSScriptRoot\src\PowerShellEditorServices.AstVisitors\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.AstVisitors.* -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
     Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\UnixConsoleEcho.dll -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
     Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\runtimes\osx-64\native\libdisablekeyecho.dylib -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
     Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\runtimes\linux-64\native\libdisablekeyecho.so -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
@@ -156,7 +157,7 @@ task Build {
 
 function UploadTestLogs {
     if ($script:IsCIBuild) {
-        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net452/logs"
+        $testLogsPath = "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net452/logs"
         $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
 
         if (Test-Path $testLogsPath) {
@@ -172,7 +173,7 @@ function UploadTestLogs {
     }
 }
 
-task Test TestServer,TestProtocol,TestHost
+task Test TestServer, TestProtocol, TestHost
 
 task TestServer -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test\
@@ -208,8 +209,9 @@ task LayoutModule -After Build {
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null
 
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.AstVisitors\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.AstVisitors.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\ -Verbose
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\libdisablekeyecho.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\publish\runtimes\win\lib\netstandard1.3\* -Filter System.IO.Pipes*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
@@ -217,7 +219,7 @@ task LayoutModule -After Build {
     if (!$script:IsUnix) {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop
 
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\ -Verbose
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\publish\System.Runtime.InteropServices.RuntimeInformation.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
@@ -238,6 +240,7 @@ task LayoutModule -After Build {
 
     if ($Configuration -eq "Debug") {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.AstVisitors\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.AstVisitors.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
@@ -261,20 +264,18 @@ task RestorePsesModules -After Build {
     (Get-Content -Raw $ModulesJsonPath | ConvertFrom-Json).PSObject.Properties | ForEach-Object {
         $name = $_.Name
         $body = @{
-            Name = $name
+            Name           = $name
             MinimumVersion = $_.Value.MinimumVersion
             MaximumVersion = $_.Value.MaximumVersion
-            Repository = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
-            Path = $submodulePath
+            Repository     = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
+            Path           = $submodulePath
         }
 
-        if (-not $name)
-        {
+        if (-not $name) {
             throw "EditorServices module listed without name in '$ModulesJsonPath'"
         }
 
-        if ($script:SaveModuleSupportsAllowPrerelease)
-        {
+        if ($script:SaveModuleSupportsAllowPrerelease) {
             $body += @{ AllowPrerelease = $_.Value.AllowPrerelease }
         }
 
@@ -282,10 +283,8 @@ task RestorePsesModules -After Build {
     }
 
     # Save each module in the modules.json file
-    foreach ($moduleName in $moduleInfos.Keys)
-    {
-        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName))
-        {
+    foreach ($moduleName in $moduleInfos.Keys) {
+        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName)) {
             Write-Host "`tModule '${moduleName}' already detected. Skipping"
             continue
         }
@@ -293,15 +292,14 @@ task RestorePsesModules -After Build {
         $moduleInstallDetails = $moduleInfos[$moduleName]
 
         $splatParameters = @{
-           Name = $moduleName
-           MinimumVersion = $moduleInstallDetails.MinimumVersion
-           MaximumVersion = $moduleInstallDetails.MaximumVersion
-           Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
-           Path = $submodulePath
+            Name           = $moduleName
+            MinimumVersion = $moduleInstallDetails.MinimumVersion
+            MaximumVersion = $moduleInstallDetails.MaximumVersion
+            Repository     = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
+            Path           = $submodulePath
         }
 
-        if ($script:SaveModuleSupportsAllowPrerelease)
-        {
+        if ($script:SaveModuleSupportsAllowPrerelease) {
             $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
         }
 

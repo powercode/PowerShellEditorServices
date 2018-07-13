@@ -1611,14 +1611,7 @@ namespace Microsoft.PowerShell.EditorServices
                     profilePaths.CurrentUserCurrentHost));
 
             // Set the variable in the runspace
-            this.powerShell.Commands.Clear();
-            this.powerShell
-                .AddCommand("Set-Variable")
-                .AddParameter("Name", "profile")
-                .AddParameter("Value", profile)
-                .AddParameter("Option", "None");
-            this.powerShell.Invoke();
-            this.powerShell.Commands.Clear();
+            powerShell.Runspace.SessionStateProxy.SetVariable("profile", profile);
         }
 
         private void HandleRunspaceStateChanged(object sender, RunspaceStateEventArgs args)

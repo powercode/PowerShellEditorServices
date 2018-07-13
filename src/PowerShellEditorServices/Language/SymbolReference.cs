@@ -42,6 +42,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public string FilePath { get; internal set; }
 
+        public string DisplayString => GetDisplayString();
+
+        protected virtual string GetDisplayString() => SymbolName;
+
         #endregion
 
         /// <summary>
@@ -86,4 +90,5 @@ namespace Microsoft.PowerShell.EditorServices
         {
         }
     }
+
 }

@@ -43,6 +43,22 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// The symbol is a hashtable key
         /// </summary>
-        HashtableKey
+        HashtableKey,
+        /// <summary>
+        /// The symbol is a class
+        /// </summary>
+        Class,
+        /// <summary>
+        /// The symbol is a Method on a class
+        /// </summary>
+        Method,
+        /// <summary>
+        /// The symbol is a Property on a class
+        /// </summary>
+        Property,
+        /// <summary>
+        /// The symbol is a constructor for a class
+        /// </summary>
+        Constructor,
     }
 }

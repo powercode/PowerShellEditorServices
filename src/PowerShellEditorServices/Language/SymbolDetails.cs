@@ -3,9 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Diagnostics;
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -38,53 +38,76 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
-        static internal async Task<SymbolDetails> Create(
-            SymbolReference symbolReference, 
+        internal static async Task<SymbolDetails> Create(
+            SymbolReference symbolReference,
             PowerShellContext powerShellContext)
         {
-            SymbolDetails symbolDetails = new SymbolDetails();
-            symbolDetails.SymbolReference = symbolReference;
+            SymbolDetails symbolDetails = new SymbolDetails {SymbolReference = symbolReference};
 
-            // If the symbol is a command, get its documentation
-            if (symbolReference.SymbolType == SymbolType.Function)
+            switch (symbolReference.SymbolType)
             {
-                CommandInfo commandInfo =
-                    await CommandHelpers.GetCommandInfo(
-                        symbolReference.SymbolName,
-                        powerShellContext);
-
-                if (commandInfo != null)
+                case SymbolType.Unknown:
+                    break;
+                case SymbolType.Variable:
                 {
-                    symbolDetails.Documentation =
-                        await CommandHelpers.GetCommandSynopsis(
-                            commandInfo,
-                            powerShellContext);
+                    symbolDetails.DisplayString = symbolReference.SymbolName;
+                    break;
+                }
+                case SymbolType.Function:
+                {
+                    // If the symbol is a command, get its documentation
+                     CommandInfo commandInfo =
+                        await CommandHelpers.GetCommandInfo(symbolReference.SymbolName, powerShellContext);
 
-                    if (commandInfo.CommandType == CommandTypes.Application)
+                    if (commandInfo != null)
                     {
-                        symbolDetails.DisplayString = "(application) " + symbolReference.SymbolName;
+                        symbolDetails.Documentation =
+                            await CommandHelpers.GetCommandSynopsis(commandInfo, powerShellContext);
+
+                        if (commandInfo.CommandType == CommandTypes.Application)
+                        {
+                            symbolDetails.DisplayString = "(application) " + symbolReference.SymbolName;
+                        }
+                        else
+                        {
+                            symbolDetails.DisplayString = "function " + symbolReference.SymbolName;
+                        }
                     }
                     else
                     {
+                        // Command information can't be loaded.  This is likely due to
+                        // the symbol being a function that is defined in a file that
+                        // hasn't been loaded in the runspace yet.
                         symbolDetails.DisplayString = "function " + symbolReference.SymbolName;
                     }
+
+                    break;
                 }
-                else
+                case SymbolType.Parameter:
                 {
-                    // Command information can't be loaded.  This is likely due to
-                    // the symbol being a function that is defined in a file that
-                    // hasn't been loaded in the runspace yet.
-                    symbolDetails.DisplayString = "function " + symbolReference.SymbolName;
+                    // TODO: Get parameter help
+                    symbolDetails.DisplayString = "(parameter) " + symbolReference.SymbolName;
+                    break;
                 }
-            }
-            else if (symbolReference.SymbolType == SymbolType.Parameter)
-            {
-                // TODO: Get parameter help
-                symbolDetails.DisplayString = "(parameter) " + symbolReference.SymbolName;
-            }
-            else if (symbolReference.SymbolType == SymbolType.Variable)
-            {
-                symbolDetails.DisplayString = symbolReference.SymbolName;
+                case SymbolType.Configuration:
+                    break;
+                case SymbolType.Workflow:
+                    break;
+                case SymbolType.HashtableKey:
+                    break;
+                case SymbolType.Class:
+                    symbolDetails.DisplayString = "(class) " + symbolReference.SymbolName;
+                    break;
+                case SymbolType.Method:
+                    symbolDetails.DisplayString = symbolReference.DisplayString;
+                    break;
+                case SymbolType.Property:
+                    symbolDetails.DisplayString = symbolReference.DisplayString;
+                    break;
+                case SymbolType.Constructor:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             return symbolDetails;

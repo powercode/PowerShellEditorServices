@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
@@ -16,6 +17,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// Contains the details and contents of an open script file.
     /// </summary>
+    [DebuggerDisplay("{FilePath}")]
     public class ScriptFile
     {
         #region Private Fields
@@ -114,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Gets the array of filepaths dot sourced in this ScriptFile 
+        /// Gets the array of filepaths dot sourced in this ScriptFile
         /// </summary>
         public string[] ReferencedFiles
         {
@@ -227,7 +229,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Deterines whether the supplied path indicates the file is an "untitled:Unitled-X" 
+        /// Deterines whether the supplied path indicates the file is an "untitled:Unitled-X"
         /// which has not been saved to file.
         /// </summary>
         /// <param name="path">The path to check.</param>
