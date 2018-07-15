@@ -16,7 +16,9 @@ function AnAdvancedFunction {
             "`$nestedVar is $nestedVar"
         }
     }
-    process {}
+    process {
+        ANestedFunction
+    }
     end {}
 }
 
@@ -26,6 +28,31 @@ Configuration AConfiguration {
     Node "TEST-PC" {}
 }
 
+
 AFunction
 1..3 | AFilter
 AnAdvancedFunction
+
+class AClass {
+    static [int] $AStaticProperty
+    [int] $AProperty
+
+    AClass() {
+        $this.AProperty = -1
+    }
+
+    AClass([int] $value) {
+        $this.AProperty = $value
+    }
+
+    [int] AMethod() { return $this.AProperty }
+    [int] AMethod([string] $overloadedParameter) { return $this.AProperty }
+}
+
+[AClass]::new()
+
+[AClass]::AStaticProperty
+
+$a.AMethod()
+
+$a.AMethod("str")

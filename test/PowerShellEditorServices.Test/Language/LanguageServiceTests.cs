@@ -46,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteCommandInFile.SourceDetails);
 
-            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
                 CompleteCommandInFile.ExpectedCompletion,
                 completionResults.Completions[0]);
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteCommandFromModule.SourceDetails);
 
-            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
                 CompleteCommandFromModule.ExpectedCompletion,
                 completionResults.Completions[0]);
@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteVariableInFile.SourceDetails);
 
-            Assert.Equal(1, completionResults.Completions.Length);
+            Assert.Single(completionResults.Completions);
             Assert.Equal(
                 CompleteVariableInFile.ExpectedCompletion,
                 completionResults.Completions[0]);
@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteAttributeValue.SourceDetails);
 
-            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
                 CompleteAttributeValue.ExpectedRange,
                 completionResults.ReplacedRange);
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteFilePath.SourceDetails);
 
-            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
                 CompleteFilePath.ExpectedRange,
                 completionResults.ReplacedRange);
@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             Assert.NotNull(paramSignatures);
             Assert.Equal("Get-Process", paramSignatures.CommandName);
-            Assert.Equal(6, paramSignatures.Signatures.Count());
+            Assert.Equal(6, paramSignatures.Signatures.Length);
         }
 
         [Fact]
@@ -125,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             Assert.NotNull(paramSignatures);
             Assert.Equal("Write-Host", paramSignatures.CommandName);
-            Assert.Equal(1, paramSignatures.Signatures.Count());
+            Assert.Single(paramSignatures.Signatures);
         }
 
         [Fact]
@@ -255,6 +255,85 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
+        public async Task LanguageServiceFindsReferencesOnClassFileF()
+        {
+            FindReferencesResult refsResult =
+                await this.GetReferences(
+                    FindsReferencesOfClass.SourceDetails);
+            var foundReferences = refsResult.FoundReferences.ToArray();
+            Assert.Equal(3, foundReferences.Length);
+            Assert.All(foundReferences, reference => Assert.Equal(SymbolType.Class, reference.SymbolType));
+        }
+
+        [Fact]
+        public async Task LanguageServiceFindsReferencesOnClassCtorFileF()
+        {
+            FindReferencesResult refsResult =
+                await this.GetReferences(
+                    FindsReferencesOfClassConstructor.SourceDetails);
+            Assert.Single(refsResult.FoundReferences);
+            var first = refsResult.FoundReferences.First();
+            Assert.Equal(SymbolType.Constructor, first.SymbolType);
+            Assert.Equal("ANewType", first.SymbolName);
+            var scriptPos = first.ScriptRegion;
+            Assert.Equal(5, scriptPos.StartColumnNumber);
+            Assert.Equal(13, scriptPos.EndColumnNumber);
+        }
+
+        [Fact]
+        public async Task LanguageServiceFindsReferencesOnClassMethodFileF()
+        {
+            FindReferencesResult refsResult =
+                await this.GetReferences(
+                    FindsReferencesOfClassRefMethod.SourceDetails);
+            var foundReferences = refsResult.FoundReferences.ToArray();
+            Assert.Equal(2, foundReferences.Length);
+            Assert.All(foundReferences, reference => Assert.Equal(SymbolType.Method, reference.SymbolType));
+            var first = foundReferences[0];
+            Assert.Equal(12, first.ScriptRegion.StartColumnNumber);
+            Assert.Equal(11, first.ScriptRegion.StartLineNumber);
+
+            var second = foundReferences[1];
+            Assert.Equal(4, second.ScriptRegion.StartColumnNumber);
+            Assert.Equal(11, second.ScriptRegion.EndColumnNumber);
+            Assert.Equal(20, second.ScriptRegion.StartLineNumber);
+        }
+
+        [Fact]
+        public async Task LanguageServiceFindsReferencesOnClassPropertyRefFileF()
+        {
+            FindReferencesResult refsResult =
+                await this.GetReferences(
+                    FindsReferencesOfClassPropertyRef.SourceDetails);
+            var foundReferences = refsResult.FoundReferences.ToArray();
+            Assert.Equal(3, foundReferences.Length);
+            Assert.All(foundReferences, reference => Assert.Equal(SymbolType.Property, reference.SymbolType));
+        }
+
+        [Fact]
+        public async Task LanguageServiceFindsReferencesOnClassPropertyFileF()
+        {
+            FindReferencesResult refsResult =
+                await this.GetReferences(
+                    FindsReferencesOfClassProperty.SourceDetails);
+            var foundReferences = refsResult.FoundReferences.ToArray();
+            Assert.Equal(3, foundReferences.Length);
+            Assert.All(foundReferences, reference => Assert.Equal(SymbolType.Property, reference.SymbolType));
+        }
+
+        [Fact]
+        public async Task LanguageServiceFindsReferencesOnClassStaticPropertyFileF()
+        {
+            FindReferencesResult refsResult =
+                await this.GetReferences(
+                    FindsReferencesOfClassStaticProperty.SourceDetails);
+            var foundReferences = refsResult.FoundReferences.ToArray();
+            Assert.Equal(2, foundReferences.Length);
+            Assert.All(foundReferences, reference => Assert.Equal(SymbolType.Property, reference.SymbolType));
+        }
+
+
+        [Fact]
         public async Task LanguageServiceFindsDetailsForBuiltInCommand()
         {
             SymbolDetails symbolDetails =
@@ -274,23 +353,28 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 this.FindSymbolsInFile(
                     FindSymbolsInMultiSymbolFile.SourceDetails);
 
-            Assert.Equal(4, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Function).Count());
-            Assert.Equal(3, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Variable).Count());
-            Assert.Equal(1, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Workflow).Count());
+            var symbolsResultFoundOccurrences = symbolsResult.FoundOccurrences.ToList();
+            Assert.Equal(4, symbolsResultFoundOccurrences.Count(r => r.SymbolType == SymbolType.Function));
+            Assert.Equal(3, symbolsResultFoundOccurrences.Count(r => r.SymbolType == SymbolType.Variable));
+            Assert.Equal(1, symbolsResultFoundOccurrences.Count(r => r.SymbolType == SymbolType.Workflow));
+            Assert.Equal(1, symbolsResultFoundOccurrences.Count(r => r.SymbolType == SymbolType.Class));
+            Assert.Equal(2, symbolsResultFoundOccurrences.Count(r => r.SymbolType == SymbolType.Method));
+            Assert.Equal(2, symbolsResultFoundOccurrences.Count(r => r.SymbolType == SymbolType.Property));
+            Assert.Equal(2, symbolsResultFoundOccurrences.Count(r => r.SymbolType == SymbolType.Constructor));
 
-            SymbolReference firstFunctionSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Function).First();
+            SymbolReference firstFunctionSymbol = symbolsResultFoundOccurrences.First(r => r.SymbolType == SymbolType.Function);
             Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
             Assert.Equal(7, firstFunctionSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(1, firstFunctionSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference lastVariableSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Variable).Last();
+            SymbolReference lastVariableSymbol = symbolsResultFoundOccurrences.Last(r => r.SymbolType == SymbolType.Variable);
             Assert.Equal("$Script:ScriptVar2", lastVariableSymbol.SymbolName);
             Assert.Equal(3, lastVariableSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(1, lastVariableSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstWorkflowSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Workflow).First();
+            SymbolReference firstWorkflowSymbol = symbolsResultFoundOccurrences.First(r => r.SymbolType == SymbolType.Workflow);
             Assert.Equal("AWorkflow", firstWorkflowSymbol.SymbolName);
-            Assert.Equal(23, firstWorkflowSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(25, firstWorkflowSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(1, firstWorkflowSymbol.ScriptRegion.StartColumnNumber);
 
             // TODO: Bring this back when we can use AstVisitor2 again (#276)
@@ -322,7 +406,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 this.FindSymbolsInFile(
                     FindSymbolsInNoSymbolsFile.SourceDetails);
 
-            Assert.Equal(0, symbolsResult.FoundOccurrences.Count());
+            Assert.Empty(symbolsResult.FoundOccurrences);
         }
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
